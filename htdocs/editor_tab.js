@@ -588,8 +588,10 @@ var editor = function () {
                     return null;
                 else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth())
                     return format_time(d1.getHours(), d1.getMinutes());
-                else
+                else if (d1.getFullYear() === d2.getFullYear())
                     return format_date_time(d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
+                else
+                    return format_year_date_time(d1.getYear(), d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
             }
             function display_date_for_entry(i) {
                 var hist = history[i];
@@ -922,6 +924,10 @@ var editor = function () {
 
     function format_date_time(month, date, hours, minutes) {
         return '<span>' + format_date(month, date) + ' ' + format_time(hours, minutes) + '</span>';
+    }
+
+    function format_year_date_time(month, date, hours, minutes) {
+        return '<span>' + format_date(month, date) + '/' + year + ' ' + format_time(hours, minutes) + '</span>';
     }
 
     function display_date_html(ds) {
