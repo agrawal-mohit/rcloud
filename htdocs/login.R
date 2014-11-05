@@ -18,11 +18,21 @@ run <- function(url, query, body, headers)
   cookies <- cookies(headers)
   extra.headers <- character(0)
 
+  ## the query may also contain notebook id with/without version, we have to set the current notebook to that
+  newcurrent <- list(notebook=query['notebook'],version=query['version']);
+
   ## redirect is either in the query or body, but we have to also guard against nonsensical values
   redirect <- query["redirect"]
   if (is.null(redirect)) redirect <- body["redirect"]
   if (is.character(redirect) && !nzchar(redirect)) redirect <- NULL
   if (!is.null(redirect) && isTRUE(any(is.na(redirect)))) redirect <- NULL
+
+  if (is.null(redirect))
+    redirect <- '/edit.html'
+  if(length(newcurrent$notebook)>0)
+      redirect <- paste(redirect,"?notebook=",newcurrent$notebook, sep='')
+  if(length(newcurrent$version)>0)
+    redirect <- paste(redirect,"&version=",newcurrent$version, sep='')
 
   if (!is.null(.rc.conf$exec.auth)) {
     ret <- rcloud.support:::getConf("welcome.page")
@@ -46,8 +56,7 @@ run <- function(url, query, body, headers)
       return(list("<html><head></head><body>Invalid or expired execution token, requesting authentication...",
                   "text/html", paste0("Refresh: 0.1; url=", ret)))
   }
-  if (is.null(redirect))
-    redirect <- '/edit.html'
+
   ctx <- create.gist.backend(as.character(cookies$user), as.character(cookies$token))
   url <- gist::auth.url(redirect, ctx=ctx)
   if (is.null(url)) {
@@ -64,6 +73,8 @@ run <- function(url, query, body, headers)
       url <- gist::auth.url(redirect, ctx=ctx)
     }
   }
+
+
   if (!is.character(url) || length(url) != 1 || !nzchar(url))
     url <- redirect ## safe-guard against bad return values
   list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",url,"\"'></head></html>", sep=''),
