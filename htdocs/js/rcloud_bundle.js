@@ -249,8 +249,8 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.tag_notebook_versionAsync(gist_id,version,tag_name);
         };
 
-        rcloud.get_version_of_tag = function(gist_id,tag) {
-            return rcloud_ocaps.get_version_of_tagAsync(gist_id,tag);
+        rcloud.get_version_by_tag = function(gist_id,tag) {
+            return rcloud_ocaps.get_version_by_tagAsync(gist_id,tag);
         };
 
         rcloud.call_notebook = function(id, version) {
@@ -426,6 +426,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "clear_recent_notebook"],
             ["config", "get_user_option"],
             ["config", "set_user_option"],
+            ["config", "get_alluser_option"],
             ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
             ["set_notebook_info"],
@@ -559,7 +560,8 @@ RCloud.create = function(rcloud_ocaps) {
             set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync,
             clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync,
             get_user_option: rcloud_ocaps.config.get_user_optionAsync,
-            set_user_option: rcloud_ocaps.config.set_user_optionAsync
+            set_user_option: rcloud_ocaps.config.set_user_optionAsync,
+            get_alluser_option: rcloud_ocaps.config.get_alluser_optionAsync
         };
 
         // notebook cache
@@ -970,39 +972,39 @@ ui_utils.editable = function(elem$, command) {
 
     switch(action) {
     case 'freeze':
-        elem$.attr('contenteditable', 'false');
-        elem$.off('keydown');
-        elem$.off('focus');
-        elem$.off('click');
-        elem$.off('blur');
+        elem$.removeAttr('contenteditable');
+        elem$.off('keydown.editable');
+        elem$.off('focus.editable');
+        elem$.off('click.editable');
+        elem$.off('blur.editable');
         break;
     case 'melt':
         elem$.attr('contenteditable', 'true');
-        elem$.focus(function() {
+        elem$.on('focus.editable', function() {
             if(!options().__active) {
                 options().__active = true;
                 set_content_type(command.allow_multiline,encode(options().active_text));
                 window.setTimeout(function() {
                     selectRange(options().select(elem$[0]));
-                    elem$.off('blur');
-                    elem$.blur(function() {
+                    elem$.off('blur.editable');
+                    elem$.on('blur.editable', function() {
                         set_content_type(command.allow_multiline,encode(options().inactive_text));
                         options().__active = false;
                     }); // click-off cancels
                 }, 10);
             }
         });
-        elem$.click(function(e) {
+        elem$.on('click.editable', function(e) {
             e.stopPropagation();
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
-        elem$.keydown(function(e) {
+        elem$.on('keydown.editable', function(e) {
             if(e.keyCode === 13) {
                 var txt = decode(elem$.text());
                 function execute_if_valid_else_ignore(f) {
                     if(options().validate(txt)) {
                         options().__active = false;
-                        elem$.off('blur'); // don't cancel!
+                        elem$.off('blur.editable'); // don't cancel!
                         elem$.blur();
                         f(txt);
                         return true;
@@ -1228,28 +1230,32 @@ Notebook.Asset.create_html_view = function(asset_model)
     filename_div.append(anchor);
     anchor.append(remove);
     var asset_old_name = filename_span.text();
-    var rename_file = function(v){
-        var new_asset_name = filename_span.text();
-        new_asset_name = new_asset_name.replace(/\s/g, " ");
-        var old_asset_content = asset_model.content();
-        if (Notebook.is_part_name(new_asset_name)) {
-            alert("Asset names cannot start with 'part[0-9]', sorry!");
-            filename_span.text(asset_old_name);
-            return;
-        }
-        var found = shell.notebook.model.has_asset(new_asset_name);
-        if (found){
-            alert('An asset with the name "' + filename_span.text() + '" already exists. Please choose a different name.');
-            filename_span.text(asset_old_name);
-        }
-        else {
-            shell.notebook.controller
-            .append_asset(old_asset_content, new_asset_name)
-            .then(function (controller) {
-                controller.select();
-            });
-            asset_model.controller.remove(true);
-        }
+    var rename_file = function(v) {
+        // this is massively inefficient - actually three round-trips to the server when
+        // we could have one!  save, create new asset, delete old one
+        shell.notebook.controller.save().then(function() {
+            var new_asset_name = filename_span.text();
+            new_asset_name = new_asset_name.replace(/\s/g, " ");
+            var old_asset_content = asset_model.content();
+            if (Notebook.is_part_name(new_asset_name)) {
+                alert("Asset names cannot start with 'part[0-9]', sorry!");
+                filename_span.text(asset_old_name);
+                return;
+            }
+            var found = shell.notebook.model.has_asset(new_asset_name);
+            if (found) {
+                alert('An asset with the name "' + filename_span.text() + '" already exists. Please choose a different name.');
+                filename_span.text(asset_old_name);
+            }
+            else {
+                shell.notebook.controller
+                    .append_asset(old_asset_content, new_asset_name)
+                    .then(function (controller) {
+                        controller.select();
+                        asset_model.controller.remove(true);
+                    });
+            }
+        });
     };
     function select(el) {
         if(el.childNodes.length !== 1 || el.firstChild.nodeType != el.TEXT_NODE)
@@ -1265,8 +1271,6 @@ Notebook.Asset.create_html_view = function(asset_model)
         select: select,
         validate: function(name) { return editor.validate_name(name); }
     };
-    if(!shell.notebook.model.read_only())
-        ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
     filename_span.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
@@ -1287,10 +1291,15 @@ Notebook.Asset.create_html_view = function(asset_model)
                 RCloud.UI.scratchpad.language_updated();
         },
         active_updated: function() {
-            if (asset_model.active())
+            if (asset_model.active()) {
+                if(!shell.notebook.model.read_only())
+                    ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
                 filename_div.addClass("active");
-            else
+            }
+            else {
+                ui_utils.editable(filename_span, "destroy");
                 filename_div.removeClass("active");
+            }
         },
         self_removed: function() {
             filename_div.remove();
@@ -1997,7 +2006,6 @@ Notebook.create_html_view = function(model, root_div)
 
     function init_cell_view(cell_view) {
         cell_view.set_readonly(model.read_only()); // usu false but future-proof it
-        cell_view.show_source();
     }
 
     var result = {
@@ -2028,6 +2036,7 @@ Notebook.create_html_view = function(model, root_div)
             $(cell_view.div()).insertBefore(root_div.children('.notebook-cell')[cell_index]);
             this.sub_views.splice(cell_index, 0, cell_view);
             init_cell_view(cell_view);
+        cell_view.show_source();
             on_rearrange();
             return cell_view;
         },
@@ -2864,22 +2873,9 @@ Notebook.is_part_name = function(filename) {
 };
 (function() {
 
-// FIXME this is just a proof of concept - using Rserve console OOBs
-// FIXME this should use RCloud.session_pane
-var append_session_info = function(msg) {
-    if(!$('#session-info').length)
-        return; // workaround for view mode
-    // one hacky way is to maintain a <pre> that we fill as we go
-    // note that R will happily spit out incomplete lines so it's
-    // not trivial to maintain each output in some separate structure
-    if (!document.getElementById("session-info-out"))
-        $("#session-info").append($("<pre id='session-info-out'></pre>"));
-    $("#session-info-out").append(msg);
-    RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
-    ui_utils.on_next_tick(function() {
-        ui_utils.scroll_to_after($("#session-info"));
-    });
-};
+function append_session_info(text) {
+    RCloud.UI.session_pane.append_text(text);
+}
 
 // FIXME this needs to go away as well.
 var oob_handlers = {
@@ -2994,7 +2990,7 @@ RCloud.session = {
             return RCloud.UI.with_progress(function() {});
         }
         // perhaps we need an event to listen on here
-        $("#session-info").empty();
+        RCloud.UI.session_pane.clear();
         $(".progress").hide();
         $("#file-upload-results").empty();
         return RCloud.UI.with_progress(function() {
@@ -3213,11 +3209,14 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         return $(sel_accordion + " > .panel > div.panel-heading");
     }
     function set_collapse(target, collapse, persist) {
+        if(target.data("would-collapse") == collapse)
+            return false;
         target.data("would-collapse", collapse);
         if(persist && rcloud.config && target.length) {
             var opt = 'ui/' + target[0].id;
             rcloud.config.set_user_option(opt, collapse);
         }
+        return true;
     }
     function all_collapsed() {
         return $.makeArray(collapsibles()).every(function(el) {
@@ -3251,7 +3250,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 return false;
             });
             collapsibles().on("size-changed", function() {
-                that.resize();
+                that.resize(true);
             });
             $(sel_collapser).click(function() {
                 if (collapsed_)
@@ -3300,11 +3299,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 this.show(true);
                 return;
             }
-            set_collapse(target, whether, persist);
+            var change = set_collapse(target, whether, persist);
             if(all_collapsed())
-                this.hide(persist);
+                this.hide(persist, !change);
             else
-                this.show(persist);
+                this.show(persist, !change);
         },
         resize: function(skip_calc) {
             if(!skip_calc) {
@@ -3773,6 +3772,8 @@ RCloud.UI.comments_frame = (function() {
             .attr("class", "comment-body")
             .style({"max-width":"70%"})
             .append("div")
+            .attr("class", "comment-body-wrapper")
+            .append("div")
             .attr("class", "comment-body-text")
             .text(function(d) { return d.body; })
             .each(function(d){
@@ -3788,12 +3789,12 @@ RCloud.UI.comments_frame = (function() {
                 };
                 ui_utils.editable(comment_element, $.extend({allow_edit: editable(d),inactive_text: comment_element.text(),active_text: comment_element.text()},editable_opts));
             });
-        var text_div = d3.selectAll(".comment-body",this);
+        var text_div = d3.selectAll(".comment-body-wrapper",this);
         text_div
             .append("i")
             .attr("class", "icon-remove comment-header-close")
             .style({"max-width":"5%"})
-            .on("click", function (d) {
+            .on("click", function (d, e) {
                 if(editable(d))
                     result.delete_comment(d.id);
             });
@@ -4216,15 +4217,15 @@ RCloud.UI.notebook_title = (function() {
                 $("#forked-from-desc").text("");
         },
         make_editable: function(node, $li, editable) {
-            function get_title(node) {
+            function get_title(node, elem) {
                 if(!node.version) {
-                    return $('.jqtree-title:not(.history)', $li);
+                    return $('.jqtree-title:not(.history)', elem);
                 } else {
-                    return $('.jqtree-title', $li);
+                    return $('.jqtree-title', elem);
                 }
             }
             if(last_editable_ && (!node || last_editable_ !== node))
-                ui_utils.editable(get_title(last_editable_), 'destroy');
+                ui_utils.editable(get_title(last_editable_, last_editable_.element), 'destroy');
             if(node) {
                 var opts = editable_opts;
                 if(node.version) {
@@ -4233,10 +4234,10 @@ RCloud.UI.notebook_title = (function() {
                         validate: function(name) { return true; }
                     });
                 }
-                ui_utils.editable(get_title(node),
+                ui_utils.editable(get_title(node, $li),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
-                                            active_text: node.name},
+                                            active_text: node.version ? node.name : node.full_name},
                                            opts));
             }
             last_editable_ = node;
@@ -4385,7 +4386,7 @@ RCloud.UI.panel_loader = (function() {
                     side: 'right',
                     name: 'file-upload',
                     title: 'File Upload',
-                    icon_class: 'icon-upload',
+                    icon_class: 'icon-upload-alt',
                     colwidth: 2,
                     sort: 2000,
                     panel: RCloud.UI.upload_frame
@@ -4599,7 +4600,7 @@ RCloud.UI.scratchpad = {
                     return;
                 if (dt.types !== null &&
                     (dt.types.indexOf ?
-                     dt.types.indexOf('Files') != -1 :
+                     (dt.types.indexOf('Files') != -1 && dt.types.indexOf('text/html') == -1):
                      dt.types.contains('application/x-moz-file'))) {
                     if (!shell.notebook.model.read_only()) {
                         e.stopPropagation();
@@ -4637,7 +4638,7 @@ RCloud.UI.scratchpad = {
                 },
                 "dragenter dragover": function(e) {
                     var dt = e.originalEvent.dataTransfer;
-                    if(dt.items.length === 1 && !shell.notebook.model.read_only())
+                    if(!shell.notebook.model.read_only())
                         dt.dropEffect = 'copy';
                 }
             });
@@ -4864,7 +4865,7 @@ return {
     },
     panel_sizer: function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);
-        var height = 24 + $('#search-summary').height() + $('#search-results').height();
+        var height = 24 + $('#search-summary').height() + $('#search-results').height() + $('#search-results-pagination').height();
         height += 30; // there is only so deep you can dig
         return {height: height, padding: padding};
     },
@@ -4886,7 +4887,7 @@ return {
     exec: function(query, sortby, orderby, start, noofrows, pgclick) {
         function summary(html, color) {
             $('#search-summary').css('color', color || 'black');
-            $("#search-summary").show().html($("<h4 />").append(html));
+            $("#search-summary").show().html($("<h4/>").append(html));
         }
         function create_list_of_search_results(d) {
             var i;
@@ -4930,7 +4931,7 @@ return {
                             star_count = d[i].starcount;
                         }
                         var notebook_id = d[i].id;
-                        var image_string = "<i class=\"icon-star\" style=\"font-size: 110%; line-height: 90%;\"><sub>" + star_count + "</sub></i>";
+                        var image_string = "<i class=\"icon-star search-star\"><sub>" + star_count + "</sub></i>";
                         d[i].parts = JSON.parse(d[i].parts);
                         var parts_table = "";
                         var inner_table = "";
@@ -4948,8 +4949,22 @@ return {
                                 if(content.length > 0)
                                     parts_table += "<tr><th class='search-result-part-name'>" + d[i].parts[k].filename + "</th></tr>";
                                 for(var l = 0; l < content.length; l++) {
-                                    inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+                                    if (d[i].parts[k].filename === "comments") {
+                                        var split = content[l].split(/ *::: */);
+                                        if(split.length < 2)
+                                            split = content[l].split(/ *: */); // old format had single colons
+                                        var comment_content = split[1] || '';
+                                        if(!comment_content)
+                                            continue;
+                                        var comment_author = split[2] || '';
+                                        var display_comment = comment_author ? (comment_author + ': ' + comment_content) : comment_content;
+                                        inner_table += "<tr><td class='search-result-comment'><span class='search-result-comment-content'>" + comment_author + ": " + comment_content + "</span></td></tr>";
+                                    }
+                                    else {
+                                        inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+                                    }
                                 }
+
                                 if (d[i].parts[k].filename != "comments") {
                                     nooflines += inner_table.match(/\|-\|/g).length;
                                 }
@@ -4958,17 +4973,17 @@ return {
                             if(inner_table !== "") {
                                 inner_table = inner_table.replace(/\|-\|,/g, '<br>').replace(/\|-\|/g, '<br>');
                                 inner_table = inner_table.replace(/line_no/g,'|');
-                                inner_table = "<table>" + inner_table + "</table>";
+                                inner_table = "<table style='width: 100%'>" + inner_table + "</table>";
                                 parts_table += "<tr><td>" + inner_table + "</td></tr>";
                             }
                         }
                         var togid = i + "more";
                         if(parts_table !== "") {
                             if(nooflines > 10) {
-                                parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table>" + parts_table + "</table></div>" +
+                                parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div>" +
                                     "<div style=\"position: relative;\"><a href=\"#\" id='"+togid+"' onclick=\"RCloud.UI.search.toggle("+i+",'"+togid+"');\" style=\"color:orange\">Show me more...</a></div></div>";
                             } else {
-                                parts_table = "<div><div id='"+i+"'><table>" + parts_table + "</table></div></div>";
+                                parts_table = "<div><div id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div></div>";
                             }
                         }
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
@@ -5048,6 +5063,8 @@ return {
 })();
 
 RCloud.UI.session_pane = {
+    error_dest_: null,
+    allow_clear: true,
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
     },
@@ -5072,8 +5089,33 @@ RCloud.UI.session_pane = {
         });
 
     },
+    panel_sizer: function(el) {
+        var def = RCloud.UI.collapsible_column.default_sizer(el);
+        if(def.height)
+            def.height += 20; // scrollbar height can screw it up
+        return def;
+    },
     error_dest: function() {
         return this.error_dest_;
+    },
+    clear: function() {
+        if(this.allow_clear)
+            $("#session-info").empty();
+    },
+    append_text: function(msg) {
+        // FIXME: dropped here from session.js, could be integrated better
+        if(!$('#session-info').length)
+            return; // workaround for view mode
+        // one hacky way is to maintain a <pre> that we fill as we go
+        // note that R will happily spit out incomplete lines so it's
+        // not trivial to maintain each output in some separate structure
+        if (!document.getElementById("session-info-out"))
+            $("#session-info").append($("<pre id='session-info-out'></pre>"));
+        $("#session-info-out").append(msg);
+        RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
+        ui_utils.on_next_tick(function() {
+            ui_utils.scroll_to_after($("#session-info"));
+        });
     },
     post_error: function(msg, dest, logged) { // post error to UI
         var errclass = 'session-error';
