@@ -522,10 +522,21 @@ star.count.key <- function(notebook)
   rcs.key(".notebook", notebook, "starcount")
 }
 
+star.starrerlist.key <- function(notebook)
+{
+  rcs.key(".notebook", notebook, "starrerlist")
+}
+
 rcloud.notebook.star.count <- function(notebook)
 {
   result <- rcs.get(star.count.key(notebook))
   if (is.null(result)) 0 else result
+}
+
+rcloud.notebook.starrer.list <- function(notebook)
+{
+  write(rcs.get(star.starrerlist.key(notebook)), "/vagrant/work/starrerlist.txt")
+  starrerlist <- rcs.get(star.starrerlist.key(notebook))
 }
 
 rcloud.multiple.notebook.star.counts <- function(notebooks)
@@ -541,6 +552,8 @@ rcloud.is.notebook.starred <- function(notebook)
 rcloud.star.notebook <- function(notebook)
 {
   if (!rcloud.is.notebook.starred(notebook)) {
+    rcs.set(star.starrerlist.key(notebook), c(rcs.get(star.starrerlist.key(notebook)), .session$username ))
+    write(rcs.get(star.starrerlist.key(notebook)), "/vagrant/work/restarrerlist.txt")
     rcs.set(star.key(notebook), TRUE)
     rcs.incr(star.count.key(notebook))
   }
@@ -549,6 +562,9 @@ rcloud.star.notebook <- function(notebook)
 rcloud.unstar.notebook <- function(notebook)
 {
   if (rcloud.is.notebook.starred(notebook)) {
+    starrerlist <- rcs.get(star.starrerlist.key(notebook))
+    rcs.set(star.starrerlist.key(notebook),starrerlist[which(starrerlist != .session$username)])
+    write(rcs.get(star.starrerlist.key(notebook)), "/vagrant/work/unstarrerlist.txt")
     rcs.rm(star.key(notebook))
     rcs.decr(star.count.key(notebook))
   }

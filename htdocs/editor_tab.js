@@ -31,6 +31,7 @@ var editor = function () {
         histories_ = {}, // cached notebook histories
         notebook_info_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
+        starrer_list_ = {} //list of people who starred the current notebook
         my_stars_ = {}, // set of notebooks starred by me
         my_friends_ = {}, // people whose notebooks i've starred
         featured_ = [], // featured users - samples, intros, etc
@@ -810,9 +811,16 @@ var editor = function () {
                 p.then(open_and_select);
         }
         if(gistname === current_.notebook) {
-            if(!_.isUndefined(star_notebook_button_) && !_.isNull(star_notebook_button_))
+            if(!_.isUndefined(star_notebook_button_) && !_.isNull(star_notebook_button_)) {
                 star_notebook_button_.set_state(my_stars_[gistname]);
+                $('#curr-starrer-list').empty();
+                $.each(starrer_list_[gistname], function (i,starrer) {
+                    $('#curr-starrer-list').append('<li><a href="#">'+starrer+'</a></li>');
+                });
+            }
             $('#curr-star-count').text(num_stars_[gistname] || 0);
+
+
         }
         if(my_friends_[user]) {
             p = update_tree_entry('friends', user, gistname, entry, true);
@@ -1450,7 +1458,12 @@ var editor = function () {
                                : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
                                    num_stars_[result.id] = count;
                                })).then(function() {
-                                   update_notebook_from_gist(result, history, options.selroot);
+                                    rcloud.stars.get_notebook_starrer_list(result.id).then(function(list) {
+                                        starrer_list_[result.id] = list;
+                                        console.log(list);
+                                        update_notebook_from_gist(result, history, options.selroot);
+                                    })
+
                                }));
 
                 promises.push(RCloud.UI.comments_frame.display_comments());
