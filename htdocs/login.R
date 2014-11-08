@@ -29,10 +29,19 @@ run <- function(url, query, body, headers)
 
   if (is.null(redirect))
     redirect <- '/edit.html'
-  if(length(newcurrent$notebook)>0)
-      redirect <- paste(redirect,"?notebook=",newcurrent$notebook, sep='')
-  if(length(newcurrent$version)>0)
-    redirect <- paste(redirect,"&version=",newcurrent$version, sep='')
+
+    write(query, "/vagrant/work/query.txt")
+    write(newcurrent$notebook, "/vagrant/work/notebookid.txt")
+        write(newcurrent$version, "/vagrant/work/version.txt")
+   write(redirect, "/vagrant/work/redirect.txt")
+  if(length(query['notebook'])>0){
+      redirect <- paste(redirect,"?notebook=",query['notebook'], sep='')
+ write(redirect, "/vagrant/work/redirect1.txt")
+ write(query['version'], "/vagrant/work/versionnnn.txt")
+   if(!identical(query['version'], NA))
+    redirect <- paste(redirect,"&version=",query['version'], sep='')
+}
+ write(redirect, "/vagrant/work/redirect2.txt")
 
   if (!is.null(.rc.conf$exec.auth)) {
     ret <- rcloud.support:::getConf("welcome.page")
