@@ -814,9 +814,13 @@ var editor = function () {
             if(!_.isUndefined(star_notebook_button_) && !_.isNull(star_notebook_button_)) {
                 star_notebook_button_.set_state(my_stars_[gistname]);
                 $('#curr-starrer-list').empty();
-                $.each(starrer_list_[gistname], function (i,starrer) {
-                    $('#curr-starrer-list').append('<li><a href="#">'+starrer+'</a></li>');
-                });
+                if(typeof(starrer_list_[gistname]) == 'object' && starrer_list_[gistname] != null) {
+                    $.each(starrer_list_[gistname], function (i, starrer) {
+                        $('#curr-starrer-list').append('<li><a href="#">' + starrer + '</a></li>');
+                    });
+                }else{
+                     $('#curr-starrer-list').append('<li><a href="#">' + starrer_list_[gistname] + '</a></li>');
+                }
             }
             $('#curr-star-count').text(num_stars_[gistname] || 0);
 
