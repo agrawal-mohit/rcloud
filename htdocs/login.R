@@ -18,8 +18,7 @@ run <- function(url, query, body, headers)
   cookies <- cookies(headers)
   extra.headers <- character(0)
 
-  ## the query may also contain notebook id with/without version, we have to set the current notebook to that
-  newcurrent <- list(notebook=query['notebook'],version=query['version']);
+
 
   ## redirect is either in the query or body, but we have to also guard against nonsensical values
   redirect <- query["redirect"]
@@ -30,18 +29,13 @@ run <- function(url, query, body, headers)
   if (is.null(redirect))
     redirect <- '/edit.html'
 
-    write(query, "/vagrant/work/query.txt")
-    write(newcurrent$notebook, "/vagrant/work/notebookid.txt")
-        write(newcurrent$version, "/vagrant/work/version.txt")
-   write(redirect, "/vagrant/work/redirect.txt")
+  ## the query may also contain notebook id with/without version, we have to set the current notebook to that
   if(length(query['notebook'])>0){
       redirect <- paste(redirect,"?notebook=",query['notebook'], sep='')
- write(redirect, "/vagrant/work/redirect1.txt")
- write(query['version'], "/vagrant/work/versionnnn.txt")
-   if(!identical(query['version'], NA))
-    redirect <- paste(redirect,"&version=",query['version'], sep='')
-}
- write(redirect, "/vagrant/work/redirect2.txt")
+      if(any(names(query)=='version')){
+        redirect <- paste(redirect,"&version=",query['version'], sep='')
+      }
+  }
 
   if (!is.null(.rc.conf$exec.auth)) {
     ret <- rcloud.support:::getConf("welcome.page")
