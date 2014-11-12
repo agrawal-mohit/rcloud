@@ -588,6 +588,7 @@ var editor = function () {
                     dat.color = color;
             }
             function get_date_diff(d1,d2) {
+                var now = new Date();
                 d1 = new Date(d1);
                 d2 = new Date(d2);
                 var diff = d1 - d2;
@@ -595,7 +596,7 @@ var editor = function () {
                     return null;
                 else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth())
                     return format_time(d1.getHours(), d1.getMinutes());
-                else if (d1.getFullYear() === d2.getFullYear())
+                else if (d1.getFullYear() === now.getFullYear())
                     return format_date_time(d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
                 else
                     return format_year_date_time(d1.getFullYear(), d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
