@@ -594,7 +594,7 @@ var editor = function () {
                 var diff = d1 - d2;
                 if(diff <= 60*1000 && d1.getHours() === d2.getHours() && d1.getMinutes() === d2.getMinutes())
                     return null;
-                else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth())
+                else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear())
                     return format_time(d1.getHours(), d1.getMinutes());
                 else if (d1.getFullYear() === now.getFullYear())
                     return format_date_time(d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
@@ -602,7 +602,22 @@ var editor = function () {
                     return format_year_date_time(d1.getFullYear(), d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
 
             }
+            function fake_history() {
+                var fh = [];
+                fh.push(new Date(2014,10,13,15,10,30,0));
+                fh.push(new Date(2014,10,12,15,10,30,0));
+                fh.push(new Date(2014,10,12,15,9,30,0));
+                fh.push(new Date(2013,11,12,15,9,20,0));
+                fh.push(new Date(2013,10,12,15,9,20,0));
+                fh.push(new Date(2013,10,12,14,9,20,0));
+                fh.push(new Date(2013,10,12,14,8,20,0));
+                fh.push(new Date(2013,10,12,14,8,10,0));
+                fh.push(new Date(2013,10,12,14,8,5,0));
+                return fh;
+            }
             function display_date_for_entry(i) {
+                fh = fake_history();
+                history[i+1].committed_at = fh[i+1].toISOString();
                 var hist = history[i];
                 var d;
                 if(i+1 < history.length) {
