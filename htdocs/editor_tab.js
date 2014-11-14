@@ -181,9 +181,9 @@ var editor = function () {
         var in_folders = nodes;
         // tired of seeing the "method 'match' of undefined" error
         if(_.some(in_folders, function(entry) {
-            return entry.label === undefined || entry.label === null;
-        }))
-           throw new Error("incomplete notebook entry (has it been shown yet?)");
+                return entry.label === undefined || entry.label === null;
+            }))
+            throw new Error("incomplete notebook entry (has it been shown yet?)");
         in_folders = _.filter(in_folders, is_in_folder);
         in_folders = _.map(in_folders, function(v) {
             var m = v.label.match(/([^/]+)\/(.+)/);
@@ -242,21 +242,21 @@ var editor = function () {
         function create_user_book_entry_map(books) {
             var users = {};
             _.each(books,
-                   function(book){
-                       var entry = notebook_info_[book];
-                       if(!entry) {
-                           invalid_notebooks_[book] = null;
-                           return users;
-                       }
-                       if(!entry.username || entry.username === "undefined" ||
-                          !entry.description || !entry.last_commit) {
-                           invalid_notebooks_[book] = entry;
-                           return users;
-                       }
-                       var user = users[entry.username] = users[entry.username] || {};
-                       user[book] = entry;
-                       return users;
-                   });
+                function(book){
+                    var entry = notebook_info_[book];
+                    if(!entry) {
+                        invalid_notebooks_[book] = null;
+                        return users;
+                    }
+                    if(!entry.username || entry.username === "undefined" ||
+                        !entry.description || !entry.last_commit) {
+                        invalid_notebooks_[book] = entry;
+                        return users;
+                    }
+                    var user = users[entry.username] = users[entry.username] || {};
+                    user[book] = entry;
+                    return users;
+                });
             return users;
         }
 
@@ -299,7 +299,7 @@ var editor = function () {
                         return false;
                     }
                     if(!entry.username || entry.username === "undefined" ||
-                       !entry.description || !entry.last_commit) {
+                        !entry.description || !entry.last_commit) {
                         invalid_notebooks_[book] = entry;
                         return false;
                     }
@@ -315,8 +315,8 @@ var editor = function () {
         var user_nodes = [], my_config = null;
         each_r_list(user_notebooks, function(username) {
             var notebook_nodes =
-                    convert_notebook_set('alls', username,
-                                         create_book_entry_map(r_vector(user_notebooks[username])));
+                convert_notebook_set('alls', username,
+                    create_book_entry_map(r_vector(user_notebooks[username])));
             var mine = username===username_;
             var id = node_id('alls', username);
             var node = {
@@ -422,23 +422,23 @@ var editor = function () {
                 all_notebooks = _.uniq(all_notebooks.sort(), true);
                 var root_data = [];
                 return Promise.all([rcloud.config.get_current_notebook()
-                                    .then(function(current) {
-                                        current_ = current;
-                                    }),
-                                    rcloud.stars.get_multiple_notebook_star_counts(all_notebooks)
-                                    .then(function(counts) {
-                                        num_stars_ = counts;
-                                    }),
-                                    rcloud.get_multiple_notebook_infos(all_notebooks)
-                                    .then(function(notebook_entries) {
-                                        notebook_info_ = notebook_entries;
-                                    }),
-                                    rcloud.config.get_alluser_option('featured_users')
-                                    .then(function(featured) {
-                                        featured_ = featured || [];
-                                        if(_.isString(featured_)) 
-                                            featured_ = [featured_];
-                                    })])
+                    .then(function(current) {
+                        current_ = current;
+                    }),
+                    rcloud.stars.get_multiple_notebook_star_counts(all_notebooks)
+                        .then(function(counts) {
+                            num_stars_ = counts;
+                        }),
+                    rcloud.get_multiple_notebook_infos(all_notebooks)
+                        .then(function(notebook_entries) {
+                            notebook_info_ = notebook_entries;
+                        }),
+                    rcloud.config.get_alluser_option('featured_users')
+                        .then(function(featured) {
+                            featured_ = featured || [];
+                            if(_.isString(featured_))
+                                featured_ = [featured_];
+                        })])
                     .then(function() {
                         var alls_root = populate_all_notebooks(user_notebook_set);
                         return [
@@ -592,32 +592,15 @@ var editor = function () {
                 d1 = new Date(d1);
                 d2 = new Date(d2);
                 var diff = d1 - d2;
-                if(diff <= 60*1000 && d1.getHours() === d2.getHours() && d1.getMinutes() === d2.getMinutes())
-                    return null;
-                else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear())
-                    return format_time(d1.getHours(), d1.getMinutes());
-                else if (d1.getFullYear() === now.getFullYear())
-                    return format_date_time(d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
-                else
-                    return format_year_date_time(d1.getFullYear(), d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
+                var min_diff = d1.getMinutes() === d2.getMinutes();
+                var hour_diff = d1.getHours() === d2.getHours();
+                var isDateSame = d1.toLocaleDateString() === d2.toLocaleDateString();
 
-            }
-            function fake_history() {
-                var fh = [];
-                fh.push(new Date(2014,10,13,15,10,30,0));
-                fh.push(new Date(2014,10,12,15,10,30,0));
-                fh.push(new Date(2014,10,12,15,9,30,0));
-                fh.push(new Date(2013,11,12,15,9,20,0));
-                fh.push(new Date(2013,10,12,15,9,20,0));
-                fh.push(new Date(2013,10,12,14,9,20,0));
-                fh.push(new Date(2013,10,12,14,8,20,0));
-                fh.push(new Date(2013,10,12,14,8,10,0));
-                fh.push(new Date(2013,10,12,14,8,5,0));
-                return fh;
+                if(diff <= 60*1000 && hour_diff && min_diff)
+                    return null;
+                else return format_date_time_stamp(d1, diff, isDateSame)
             }
             function display_date_for_entry(i) {
-                fh = fake_history();
-                history[i+1].committed_at = fh[i+1].toISOString();
                 var hist = history[i];
                 var d;
                 if(i+1 < history.length) {
@@ -627,7 +610,21 @@ var editor = function () {
                     d = new Date(hist.committed_at);
                 return d || 'none';
             }
+
+            function fake_hist(){
+                var fh = [];
+                fh.push(new Date(2014,10,13,15,10,30,0));
+                fh.push(new Date(2014,10,12,15,9,30,0));
+                fh.push(new Date(2013,10,14,15,9,20,0));
+                fh.push(new Date(2013,10,12,14,9,20,0));
+                fh.push(new Date(2013,10,12,14,8,20,0));
+                fh.push(new Date(2013,10,12,14,8,10,0));
+                return fh;
+            }
+
             function make_hist_node(color, i, force_date) {
+                fh = fake_hist();
+                if(i<history.length-1)history[i+1].committed_at = fh[i+1].toISOString();
                 var hist = history[i];
                 var hdat = _.clone(node);
                 var sha = hist.version.substring(0, 10);
@@ -661,10 +658,10 @@ var editor = function () {
             // remove forced date on version above ellipsis, if any
             if(ellipsis) {
                 $tree_.tree('updateNode',
-                            node.children[node.children.length-2],
-                            {
-                                last_commit: display_date_for_entry(node.children.length-2)
-                            });
+                    node.children[node.children.length-2],
+                    {
+                        last_commit: display_date_for_entry(node.children.length-2)
+                    });
             }
 
             // insert at top
@@ -746,7 +743,7 @@ var editor = function () {
                     nshow = show_sha(histories_[node.gistname], where);
                 process_history(nshow);
                 return node;
-        });
+            });
     }
 
     function scroll_into_view(node) {
@@ -758,10 +755,10 @@ var editor = function () {
         }
         if($(node.element).position().top > height)
             $tree_.parent().scrollTo(null, $tree_.parent().scrollTop() +
-                                     $(node.element).position().top - height + 50);
+            $(node.element).position().top - height + 50);
         else if($(node.element).position().top < 0)
             $tree_.parent().scrollTo(null, $tree_.parent().scrollTop() +
-                                     $(node.element).position().top - 100);
+            $(node.element).position().top - 100);
     }
 
     function select_node(node) {
@@ -773,22 +770,22 @@ var editor = function () {
 
     function update_tree_entry(root, user, gistname, entry, create) {
         var data = {label: entry.description,
-                    last_commit: new Date(entry.last_commit),
-                    sort_order: ordering.NOTEBOOK,
-                    visible: entry.visible};
+            last_commit: new Date(entry.last_commit),
+            sort_order: ordering.NOTEBOOK,
+            visible: entry.visible};
 
         // always show the same number of history nodes as before
         var whither = 'hide', where = null;
         var inter_path = as_folder_hierarchy([data], node_id(root, user))[0];
         var node = update_tree(root, user, gistname, inter_path,
-                               function(node) {
-                                   if(node.children.length) {
-                                       whither = 'index';
-                                       where = node.children.length;
-                                       if(node.children[where-1].id==='showmore')
-                                           --where;
-                                   }
-                               }, create);
+            function(node) {
+                if(node.children.length) {
+                    whither = 'index';
+                    where = node.children.length;
+                    if(node.children[where-1].id==='showmore')
+                        --where;
+                }
+            }, create);
         if(!node)
             return Promise.resolve(null); // !create
 
@@ -811,7 +808,7 @@ var editor = function () {
             if(current_.version) {
                 $tree_.tree('openNode', node);
                 var n2 = $tree_.tree('getNodeById',
-                                     node_id(node.root, user, gistname, current_.version));
+                    node_id(node.root, user, gistname, current_.version));
                 if(!n2)
                     throw new Error('tree node was not created for current history');
                 node = n2;
@@ -822,7 +819,7 @@ var editor = function () {
         if(selroot === true)
             selroot = featured_.indexOf(user) >=0 ? 'featured' :
                 my_stars_[gistname] ? 'interests' :
-                my_friends_[user] ? 'friends': 'alls';
+                    my_friends_[user] ? 'friends': 'alls';
         if(my_stars_[gistname]) {
             p = update_tree_entry('interests', user, gistname, entry, true);
             if(selroot==='interests')
@@ -854,7 +851,7 @@ var editor = function () {
     function fake_hover(node) {
         var parent = node.parent;
         var index = $('.notebook-commands.appear', node.element).css('display') !== 'none' ?
-                parent.children.indexOf(node) : undefined;
+            parent.children.indexOf(node) : undefined;
         setTimeout(function() {
             if(index>=0 && index < parent.children.length) {
                 var next = parent.children[index];
@@ -906,8 +903,8 @@ var editor = function () {
             histories_[gistname] = history;
 
         var entry = update_notebook_model(user, gistname,
-                                          result.description,
-                                          result.updated_at || result.history[0].committed_at);
+            result.description,
+            result.updated_at || result.history[0].committed_at);
 
         update_notebook_view(user, gistname, entry, selroot);
     }
@@ -938,38 +935,47 @@ var editor = function () {
         }
     }
 
-    function format_date(month, date) {
-        return (month+1) + '/' + date;
-    }
+    //function format_date(date) {
+    //    return (date.getMonth()+1) + '/' + date.getDate();
+    //}
+    //
+    //function format_time(date) {
+    //    function pad(n) { return n<10 ? '0'+n : n; }
+    //    return '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
+    //}
+    //
+    //function format_date_time(date) {
+    //    return '<span>' + format_date(date) + ' ' + format_time(date) + '</span>';
+    //}
+    //
+    //function format_year_date_time(date) {
+    //    return '<span>' + format_date(date) + '/' + date.getFullYear().toString().substr(2,2) + ' ' + format_time(date)) + '</span>';
+    //}
 
-    function format_time(hours, minutes) {
+    function format_date_time_stamp(date, diff, isDateSame) {
         function pad(n) { return n<10 ? '0'+n : n; }
-        return '<span class="notebook-time">' + hours + ':' + pad(minutes) + '</span>';
-    }
+        var now = new Date();
+        var time_part = '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
+        var date_part = (date.getMonth()+1) + '/' + date.getDate();
+        var year_part = date.getFullYear().toString().substr(2,2);
 
-    function format_date_time(month, date, hours, minutes) {
-        return '<span>' + format_date(month, date) + ' ' + format_time(hours, minutes) + '</span>';
-    }
+        if(diff < 24*60*60*1000 && isDateSame)
+            return time_part;
+        else if(date.getFullYear() === now.getFullYear())
+            return '<span>' + date_part + ' ' + time_part + '</span>';
+        else
+            return '<span>' + date_part + '/' + year_part + ' ' + time_part + '</span>';
 
-    function format_year_date_time(year, month, date, hours, minutes) {
-        return '<span>' + format_date(month, date) + '/' + year.toString().substr(2,2) + ' ' + format_time(hours, minutes) + '</span>';
     }
-
     function display_date_html(ds) {
         if(ds==='none')
             return '';
         if(typeof ds==='string')
             return ds;
         var date = new Date(ds);
-        var now =  new Date();
+        var now = new Date();
         var diff = now - date;
-        if(diff < 24*60*60*1000)
-            return format_time(date.getHours(), date.getMinutes());
-        else if (now.getFullYear() === date.getFullYear())
-            return format_date_time(date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
-        else
-            return format_year_date_time(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
-
+        return format_date_time_stamp(date, diff, true) //Third parameter is true by default as the date comparison is not required here
     }
     function display_date(ds) {
         // return an element
@@ -989,8 +995,8 @@ var editor = function () {
         var right = $($.el.span({'class': 'notebook-right'}));
         if(node.last_commit) {
             right.append($.el.span({'id': 'date',
-                                            'class': 'notebook-date'},
-                                           display_date(node.last_commit)));
+                    'class': 'notebook-date'},
+                display_date(node.last_commit)));
         }
         if(node.user === username_ && $tree_.tree('isNodeSelected', node))
             RCloud.UI.notebook_title.make_editable(node, $li, true);
@@ -1011,13 +1017,13 @@ var editor = function () {
             var add_buttons = adder(always);
             var star_style = _.extend({'font-size': '80%'}, icon_style);
             var states = {true: {'class': 'icon-star', title: 'unstar'},
-                          false: {'class': 'icon-star-empty', title: 'star'}};
+                false: {'class': 'icon-star-empty', title: 'star'}};
             var state = my_stars_[node.gistname] || false;
             var star_unstar = ui_utils.fa_button(states[state]['class'],
-                                                 function(e) { return states[state].title; },
-                                                 'star',
-                                                 star_style,
-                                                 true);
+                function(e) { return states[state].title; },
+                'star',
+                star_style,
+                true);
             // sigh, ui_utils.twostate_icon should be a mixin or something
             // ... why does this code exist?
             star_unstar.click(function(e) {
@@ -1083,15 +1089,15 @@ var editor = function () {
             if(node.user===username_) {
                 var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style, true);
                 remove.click(function(e) {
-                   var yn = confirm("Do you want to remove '"+node.full_name+"'?");
-                   if (yn) {
-                       e.stopPropagation();
-                       e.preventDefault();
-                       result.remove_notebook(node.user, node.gistname);
-                       return false;
-                   } else {
-                       return false;
-                   }
+                    var yn = confirm("Do you want to remove '"+node.full_name+"'?");
+                    if (yn) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        result.remove_notebook(node.user, node.gistname);
+                        return false;
+                    } else {
+                        return false;
+                    }
                 });
                 add_buttons(remove);
             }
@@ -1147,11 +1153,11 @@ var editor = function () {
         return rcloud.config.get_recent_notebooks()
             .then(function(recent) {
                 var sorted = _.chain(recent)
-                        .pairs()
-                        .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
-                        .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
-                        .sortBy(function(kv) { return kv[1]; })
-                        .value();
+                    .pairs()
+                    .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
+                    .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
+                    .sortBy(function(kv) { return kv[1]; })
+                    .value();
                 // a recursive error handler
                 function try_last() {
                     var last = sorted.pop();
@@ -1159,22 +1165,22 @@ var editor = function () {
                         return result.new_notebook();
                     else
                         return result.load_notebook(last[0], null)
-                        .catch(function(err) {
-                            RCloud.UI.session_pane.post_rejection(err);
-                            if(/Not Found/.test(err))
-                                rcloud.config.clear_recent_notebook(last);
-                            // if we reach the limit, stop trying.  if loading fails for a reason that
-                            // is not actually a loading problem then stop trying.
-                            if(--tries_left === 0) {
-                                var quit_err = new Error("Failed to load " + NOTEBOOK_LOAD_FAILS + " notebooks. Quitting.");
-                                RCloud.UI.session_pane.post_rejection(quit_err);
-                                return Promise.resolve(false);
-                            }
-                            else if(err.from_load)
-                                return try_last();
-                            else
-                                return Promise.resolve(false);
-                        });
+                            .catch(function(err) {
+                                RCloud.UI.session_pane.post_rejection(err);
+                                if(/Not Found/.test(err))
+                                    rcloud.config.clear_recent_notebook(last);
+                                // if we reach the limit, stop trying.  if loading fails for a reason that
+                                // is not actually a loading problem then stop trying.
+                                if(--tries_left === 0) {
+                                    var quit_err = new Error("Failed to load " + NOTEBOOK_LOAD_FAILS + " notebooks. Quitting.");
+                                    RCloud.UI.session_pane.post_rejection(quit_err);
+                                    return Promise.resolve(false);
+                                }
+                                else if(err.from_load)
+                                    return try_last();
+                                else
+                                    return Promise.resolve(false);
+                            });
                 }
                 return try_last();
             })
@@ -1228,17 +1234,17 @@ var editor = function () {
                 };
             }
             publish_notebook_checkbox_ = ui_utils.checkbox_menu_item($("#publish-notebook"),
-               function() {
-                   rcloud.publish_notebook(current_.notebook).then(publish_success(current_.notebook, false));
-               },
-               function() {
-                   rcloud.unpublish_notebook(current_.notebook).then(publish_success(current_.notebook, true));
-               });
+                function() {
+                    rcloud.publish_notebook(current_.notebook).then(publish_success(current_.notebook, false));
+                },
+                function() {
+                    rcloud.unpublish_notebook(current_.notebook).then(publish_success(current_.notebook, true));
+                });
             var snf = result.star_notebook;
             star_notebook_button_ =
                 ui_utils.twostate_icon($("#star-notebook"),
-                                       snf.bind(this, true), snf.bind(this, false),
-                                       'icon-star', 'icon-star-empty');
+                    snf.bind(this, true), snf.bind(this, false),
+                    'icon-star', 'icon-star-empty');
             return promise;
         },
         fatal_reload: function(message) {
@@ -1271,8 +1277,8 @@ var editor = function () {
                     throw xep;
                 })
                 .then(this.load_callback({version: version,
-                                          selroot: selroot,
-                                          push_history: push_history}));
+                    selroot: selroot,
+                    push_history: push_history}));
         },
         open_notebook: function(gistname, version, selroot, new_window) {
             // really just load_notebook except possibly in a new window
@@ -1326,11 +1332,11 @@ var editor = function () {
             // else use current notebook & user
             opts = opts || {};
             var gistname = opts.gistname ||
-                    opts.notebook&&opts.notebook.id ||
-                    current_.notebook;
+                opts.notebook&&opts.notebook.id ||
+                current_.notebook;
             var user = opts.user ||
-                    opts.notebook&&opts.notebook.user&&opts.notebook.user.login ||
-                    notebook_info_[gistname].username;
+                opts.notebook&&opts.notebook.user&&opts.notebook.user.login ||
+                notebook_info_[gistname].username;
             // keep selected if was (but don't try to select a removed notebook)
             if(gistname === current_.notebook && opts.selroot === undefined)
                 opts.selroot = true;
@@ -1340,9 +1346,9 @@ var editor = function () {
                     var entry = get_notebook_info(gistname);
                     if(!entry.description && !opts.notebook) {
                         console.log("attempt to star notebook we have no record of",
-                                    node_id('interests', user, gistname));
+                            node_id('interests', user, gistname));
                         throw new Error("attempt to star notebook we have no record of",
-                                        node_id('interests', user, gistname));
+                            node_id('interests', user, gistname));
                     }
                     add_interest(user, gistname);
                     if(my_friends_[user]===1)
@@ -1351,8 +1357,8 @@ var editor = function () {
                     if(opts.notebook) {
                         if(opts.make_current)
                             that.load_callback({version: opts.version,
-                                                is_change: opts.is_change || false,
-                                                selroot: 'interests'}) (opts.notebook);
+                                is_change: opts.is_change || false,
+                                selroot: 'interests'}) (opts.notebook);
                         else
                             update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }
@@ -1373,7 +1379,7 @@ var editor = function () {
         remove_notebook: function(user, gistname) {
             var that = this;
             return (!my_stars_[gistname] ? Promise.resolve() :
-                    this.star_notebook(false, {user: user, gistname: gistname, selroot: false}))
+                this.star_notebook(false, {user: user, gistname: gistname, selroot: false}))
                 .then(function() {
                     remove_notebook_info(user, gistname);
                     remove_notebook_view(user, gistname);
@@ -1393,9 +1399,9 @@ var editor = function () {
                 .bind(this)
                 .then(function(notebook) {
                     return this.star_notebook(true, {notebook: notebook,
-                                                     make_current: true,
-                                                     is_change: !!version,
-                                                     version: null})
+                        make_current: true,
+                        is_change: !!version,
+                        version: null})
                         .return(notebook.id);
                 }).then(function(gistname) {
                     return this.set_notebook_visibility(gistname, true);
@@ -1436,9 +1442,9 @@ var editor = function () {
             var that = this;
             var options = $.extend(
                 {version: null,
-                 is_change: false,
-                 selroot: null,
-                 push_history: true}, opts);
+                    is_change: false,
+                    selroot: null,
+                    push_history: true}, opts);
             return function(result) {
                 var promises = []; // fetch and setup various ui "in parallel"
                 current_ = {notebook: result.id, version: options.version};
@@ -1455,13 +1461,13 @@ var editor = function () {
                 RCloud.UI.share_button.update_link();
 
                 /*
-                // disabling inter-notebook navigation for now - concurrency issues
-                options.push_history = false;
-                if(options.push_history)
-                    (window.location.search ?
-                     window.history.pushState :
-                     window.history.replaceState)
-                    .bind(window.history)
+                 // disabling inter-notebook navigation for now - concurrency issues
+                 options.push_history = false;
+                 if(options.push_history)
+                 (window.location.search ?
+                 window.history.pushState :
+                 window.history.replaceState)
+                 .bind(window.history)
                  */
                 update_url({notebook: result.id, version: options.version, tag:tag});
 
@@ -1474,11 +1480,11 @@ var editor = function () {
                     history = result.history;
 
                 promises.push((_.has(num_stars_, result.id) ? Promise.resolve(undefined)
-                               : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
-                                   num_stars_[result.id] = count;
-                               })).then(function() {
-                                   update_notebook_from_gist(result, history, options.selroot);
-                               }));
+                    : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
+                    num_stars_[result.id] = count;
+                })).then(function() {
+                        update_notebook_from_gist(result, history, options.selroot);
+                    }));
 
                 promises.push(RCloud.UI.comments_frame.display_comments());
                 promises.push(rcloud.is_notebook_published(result.id).then(function(p) {
@@ -1500,8 +1506,8 @@ var editor = function () {
                         var path = line.substring(0, result[0]-1);
                         var t = path.match(r2);
                         return [t[1], t[2],
-                                line.substring(result[0], result[1]-1),
-                                line.substring(result[1])];
+                            line.substring(result[0], result[1]-1),
+                            line.substring(result[1])];
                     }
                 }
                 throw new Error("shouldn't get here");
@@ -1516,9 +1522,9 @@ var editor = function () {
                     result.push(r.lastIndex);
                     if (result.length === 2) {
                         return [line_number,
-                                line.substring(0, result[0]-1),
-                                line.substring(result[0], result[1]-1),
-                                line.substring(result[1])];
+                            line.substring(0, result[0]-1),
+                            line.substring(result[0], result[1]-1),
+                            line.substring(result[1])];
                     }
                 }
                 throw new Error("shouldn't get here");
