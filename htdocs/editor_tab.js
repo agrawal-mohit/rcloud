@@ -1022,13 +1022,45 @@ var editor = function () {
             };
             star_unstar.append($.el.sub(String(num_stars_[node.gistname] || 0)));
             add_buttons(star_unstar);
-
             add_buttons.commit();
             right.append(always);
 
             // commands that appear
             var appear = $($.el.span({'class': 'notebook-commands appear'}));
             add_buttons = adder(appear);
+            //information icon
+
+            var info = ui_utils.fa_button('icon-info', 'info', 'info', icon_style, false);
+            //var info_icon = $($.el.span({'class': 'icon-info',
+            //    'title': 'info',
+            //    'data-toggle': "popover",
+            //    'data-content': starrer_list_[node.gistname] || ''
+            //}));
+
+            rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list){
+                if(typeof(list) == 'string')
+                    list = [list];
+                var thisList = '';
+                $.each(list,function(i,v) {
+                    thisList = thisList + '<p>'+v+'</p>';
+                })
+                $(info).popover({
+                    title: 'People starred',
+                    html: true,
+                    content: thisList,
+                    container: 'body',
+                    placement: 'right'
+                });
+            });
+            info.click(function(e){
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            $(info).blur(function(){
+                $(this).popover('hide');
+            });
+            add_buttons(info);
+            //history icon
             if(true) { // all notebooks have history - should it always be accessible?
                 var disable = current_.notebook===node.gistname && current_.version;
                 var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style, true);
@@ -1046,6 +1078,7 @@ var editor = function () {
 
                 add_buttons(history);
             }
+            //private-public icon
             if(node.user===username_) {
                 var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style, true),
                     make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style, true);
