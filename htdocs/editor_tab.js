@@ -999,6 +999,30 @@ var editor = function () {
             // commands for the right column, always shown
             var always = $($.el.span({'class': 'notebook-commands-right'}));
             var add_buttons = adder(always);
+            //information icon
+            var info = ui_utils.fa_button('icon-info', 'info', 'info', icon_style, false);
+            rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list){
+                if(typeof(list) == 'string')
+                    list = [list];
+                var thisList = '';
+                $.each(list,function(i,v) {
+                    thisList = thisList + '<p>'+v+'</p>';
+                })
+                $(info).popover({
+                    title: 'People starred',
+                    html: true,
+                    content: thisList,
+                    container: 'body',
+                    placement: 'right'
+                });
+            });
+            info.click(function(e){
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            $(info).blur(function(){
+                $(this).popover('hide');
+            });
             var star_style = _.extend({'font-size': '80%'}, icon_style);
             var states = {true: {'class': 'icon-star', title: 'unstar'},
                           false: {'class': 'icon-star-empty', title: 'star'}};
@@ -1022,44 +1046,13 @@ var editor = function () {
             };
             star_unstar.append($.el.sub(String(num_stars_[node.gistname] || 0)));
             add_buttons(star_unstar);
+            add_buttons(info);
             add_buttons.commit();
             right.append(always);
 
             // commands that appear
             var appear = $($.el.span({'class': 'notebook-commands appear'}));
             add_buttons = adder(appear);
-            //information icon
-
-            var info = ui_utils.fa_button('icon-info', 'info', 'info', icon_style, false);
-            //var info_icon = $($.el.span({'class': 'icon-info',
-            //    'title': 'info',
-            //    'data-toggle': "popover",
-            //    'data-content': starrer_list_[node.gistname] || ''
-            //}));
-
-            rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list){
-                if(typeof(list) == 'string')
-                    list = [list];
-                var thisList = '';
-                $.each(list,function(i,v) {
-                    thisList = thisList + '<p>'+v+'</p>';
-                })
-                $(info).popover({
-                    title: 'People starred',
-                    html: true,
-                    content: thisList,
-                    container: 'body',
-                    placement: 'right'
-                });
-            });
-            info.click(function(e){
-                e.preventDefault();
-                e.stopPropagation();
-            });
-            $(info).blur(function(){
-                $(this).popover('hide');
-            });
-            add_buttons(info);
             //history icon
             if(true) { // all notebooks have history - should it always be accessible?
                 var disable = current_.notebook===node.gistname && current_.version;
@@ -1075,7 +1068,6 @@ var editor = function () {
                     }
                     return false;
                 });
-
                 add_buttons(history);
             }
             //private-public icon

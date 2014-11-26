@@ -402,7 +402,6 @@ ul.jqtree-tree .jqtree-title.private {
 .notebook-commands-right {
     position: relative;
     display: inline-block;
-    width: 30px;
 }
 
 .notebook-commands {
@@ -417,6 +416,7 @@ ul.jqtree-tree .jqtree-title.private {
 
 .notebook-commands.appear {
     float: right;
+    margin-right:15px;
 }
 
 li.jqtree-selected .notebook-commands {
