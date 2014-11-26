@@ -921,9 +921,9 @@ var editor = function () {
             $tree_.tree('removeNode', n2);
         }
     }
+    function pad(n) { return n<10 ? '0'+n : n; }
 
     function format_date_time_stamp(date, diff, isDateSame) {
-        function pad(n) { return n<10 ? '0'+n : n; }
         var now = new Date();
         var time_part = '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
         var date_part = (date.getMonth()+1) + '/' + date.getDate();
@@ -942,9 +942,10 @@ var editor = function () {
         if(typeof ds==='string')
             return ds;
         var date = new Date(ds);
-        var now = new Date();
-        var diff = now - date;
-        return format_date_time_stamp(date, diff, true); //Third parameter is true by default as the date comparison is not required here
+        var time_part = '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
+        var date_part = (date.getMonth()+1) + '/' + date.getDate();
+        var year_part = date.getFullYear().toString().substr(2,2);
+        return '<span>' + date_part + '/' + year_part + ' ' + time_part + '</span>';
     }
 
     function display_date(ds) {
