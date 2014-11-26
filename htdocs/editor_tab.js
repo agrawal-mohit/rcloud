@@ -1008,13 +1008,14 @@ var editor = function () {
                 $.each(list,function(i,v) {
                     thisList = thisList + '<p>'+v+'</p>';
                 })
-                $(info).popover({
-                    title: 'People starred',
-                    html: true,
-                    content: thisList,
-                    container: 'body',
-                    placement: 'right'
-                });
+                if(list.length>0)
+                    $(info).popover({
+                        title: 'People starred',
+                        html: true,
+                        content: thisList,
+                        container: 'body',
+                        placement: 'right'
+                    });
             });
             info.click(function(e){
                 e.preventDefault();
