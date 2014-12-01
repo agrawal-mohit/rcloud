@@ -967,6 +967,7 @@ var editor = function () {
     }
 
     var icon_style = {'line-height': '90%'};
+
     function on_create_tree_li(node, $li) {
         $li.css("min-height","15px");
         var element = $li.find('.jqtree-element'),
@@ -999,31 +1000,6 @@ var editor = function () {
             // commands for the right column, always shown
             var always = $($.el.span({'class': 'notebook-commands-right'}));
             var add_buttons = adder(always);
-            //information icon
-            var info = ui_utils.fa_button('icon-info', 'info', 'info', icon_style, false);
-            rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list){
-                if(typeof(list) == 'string')
-                    list = [list];
-                var thisList = '';
-                $.each(list,function(i,v) {
-                    thisList = thisList + '<p>'+v+'</p>';
-                })
-                if(list.length>0)
-                    $(info).popover({
-                        title: 'People starred',
-                        html: true,
-                        content: thisList,
-                        container: 'body',
-                        placement: 'right'
-                    });
-            });
-            info.click(function(e){
-                e.preventDefault();
-                e.stopPropagation();
-            });
-            $(info).blur(function(){
-                $(this).popover('hide');
-            });
             var star_style = _.extend({'font-size': '80%'}, icon_style);
             var states = {true: {'class': 'icon-star', title: 'unstar'},
                           false: {'class': 'icon-star-empty', title: 'star'}};
@@ -1047,13 +1023,35 @@ var editor = function () {
             };
             star_unstar.append($.el.sub(String(num_stars_[node.gistname] || 0)));
             add_buttons(star_unstar);
-            add_buttons(info);
             add_buttons.commit();
             right.append(always);
 
             // commands that appear
             var appear = $($.el.span({'class': 'notebook-commands appear'}));
             add_buttons = adder(appear);
+            //information icon
+            var info = ui_utils.fa_button('icon-info', 'info', 'info', icon_style, false);
+            rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list){
+                if(typeof(list) == 'string')
+                    list = [list];
+                var thisList = '<p><b>Starred by : </b></p>';
+                $.each(list,function(i,v) {
+                    thisList = thisList + '<p>'+v+'</p>';
+                })
+                if(list.length>0)
+                    $(info).popover({
+                        title: node.full_name,
+                        html: true,
+                        content: thisList,
+                        container: 'body',
+                        placement: 'right'
+                    });
+            });
+            info.click(function(e){
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            add_buttons(info);
             //history icon
             if(true) { // all notebooks have history - should it always be accessible?
                 var disable = current_.notebook===node.gistname && current_.version;
@@ -1127,6 +1125,14 @@ var editor = function () {
         }
         element.append(right);
     }
+
+    //for hiding information popovers on click outside
+    $('body').on('click', function (e) {
+        if ($(e.target).data('toggle') !== 'popover'
+            && $(e.target).parents('.popover.in').length === 0) {
+            $('[data-original-title]').popover('hide');
+        }
+    });
 
     var make_edit_url = ui_utils.url_maker('edit.html');
 

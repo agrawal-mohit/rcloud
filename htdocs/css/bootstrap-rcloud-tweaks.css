@@ -112,3 +112,11 @@ td {
 .panel-heading {
     padding: 5px 15px;
 }
+
+.arrow{
+    display: none !important;
+}
+
+.popover{
+    left : 330px !important;
+}
