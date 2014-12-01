@@ -1039,11 +1039,11 @@ var editor = function () {
             info.click(function(e){
                 e.preventDefault();
                 e.stopPropagation();
-                $('[data-original-title]').popover('hide');
+                $('[data-original-title]').popover('hide'); //removing previously opened popover
                 var popover = $(this).popover()
                 popover.on("show.bs.popover", function(e) {
-                    $(popover.data()["bs.popover"].$tip[0]).addClass('popover-offset');
-                    $(popover.data()["bs.popover"].$tip[0].childNodes[0]).addClass('no-arrow');
+                    $(popover.data()["bs.popover"].$tip[0]).addClass('popover-offset'); 
+                    $(popover.data()["bs.popover"].$tip[0].childNodes[0]).addClass('no-arrow'); //removing default arrow from the popover
                 });
             });
             add_buttons(info);
