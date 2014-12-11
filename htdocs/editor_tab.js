@@ -1040,9 +1040,9 @@ var editor = function () {
                         delay: {hide: 0}
                     });
                     $(thisIcon).popover('show');
-                    var thisPopover = $(thisIcon).popover().data()['bs.popover'].tip();
-                    $($(thisIcon).popover().data()["bs.popover"].$tip[0]).addClass('popover-offset');
-                    $($(thisIcon).popover().data()["bs.popover"].$tip[0].childNodes[0]).addClass('no-arrow'); // removing default arrow in popover
+                    var thisPopover = $(thisIcon).popover().data()['bs.popover'].$tip[0];
+                    $(thisPopover).addClass('popover-offset');
+                    $(thisPopover.childNodes[0]).addClass('no-arrow'); // removing default arrow in popover
                     info_popover_ = $(thisIcon);
                 });
             });
@@ -1122,7 +1122,7 @@ var editor = function () {
     //for hiding information popover on click outside
     $('body').on('click', function(e) {
         if($(e.target).data('toggle') !== 'popover' && $(e.target).parents('.popover.in').length === 0) {
-            info_popover_ .popover('destroy');
+            info_popover_.popover('destroy');
             info_popover_ = null;
         }
     });
@@ -1364,7 +1364,7 @@ var editor = function () {
                         change_folder_friendness(user);
                     if(opts.notebook) {
                         if(opts.make_current)
-                            that.load_callback({version: opts.version,is_change: opts.is_change || false,selroot: 'interests'})(opts.notebook);
+                            that.load_callback({version: opts.version, is_change: opts.is_change || false, selroot: 'interests'})(opts.notebook);
                         else
                             update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }
