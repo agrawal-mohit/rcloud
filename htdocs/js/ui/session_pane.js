@@ -23,7 +23,15 @@ RCloud.UI.session_pane = {
                 that.clear();
             }
         });
-
+        // Link for error collapse
+        $('#show-details').click(function() {
+            $("#session-info").css('max-height', function(_, max_height) {
+                return max_height === '60px' ? 'none' : '60px';
+            })
+            $(this).html(function(_, html) {
+                return html === 'Show Details' ? 'Hide Details' : 'Show Details';
+            })
+        });
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
