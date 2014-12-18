@@ -95,6 +95,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         execute_cell();
     });
     var cell_status = $("<div class='cell-status'></div>");
+    var cell_sequence = $("<div class='cell-sequence'></div>");
+    cell_sequence.html('#' + cell_model.filename().split('.')[0].slice(-1));
+    cell_status.append(cell_sequence);
     var button_float = $("<div class='cell-controls'></div>");
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
