@@ -23,7 +23,15 @@ RCloud.UI.session_pane = {
                 that.clear();
             }
         });
-
+        // Link for error collapse
+        $('#show-details').click(function() {
+            $("#session-info").css('max-height', function(_, max_height) {
+                return max_height === '57px' ? 'none' : '57px';
+            })
+            $(this).html(function(_, html) {
+                return html === 'Show Details' ? 'Hide Details' : 'Show Details';
+            })
+        });
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
@@ -58,6 +66,7 @@ RCloud.UI.session_pane = {
         ui_utils.on_next_tick(function() {
             ui_utils.scroll_to_after($("#session-info"));
         });
+        $('#show-details').css('display', 'block');
     },
     post_error: function(msg, dest, logged) { // post error to UI
         $('#loading-animation').hide();
