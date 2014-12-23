@@ -68,7 +68,6 @@ RCloud.UI.session_pane = {
         ui_utils.on_next_tick(function() {
             ui_utils.scroll_to_after($("#session-info"));
         });
-        $('#show-details').css('display', 'block');
     },
     post_error: function(msg, dest, logged) { // post error to UI
         $('#loading-animation').hide();
@@ -87,6 +86,7 @@ RCloud.UI.session_pane = {
             ui_utils.on_next_tick(function() {
                 ui_utils.scroll_to_after($("#session-info"));
             });
+            $('#show-details').css('display', 'block');
         }
         if(!logged)
             console.log("pre-init post_error: " + msg.text());
