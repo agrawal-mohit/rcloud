@@ -49,8 +49,10 @@ RCloud.UI.session_pane = {
         return this.error_dest_;
     },
     clear: function() {
-        if(this.allow_clear)
+        if(this.allow_clear) {
             $("#session-info").empty();
+            $('#show-details').css('display', 'none');
+        }
     },
     append_text: function(msg) {
         // FIXME: dropped here from session.js, could be integrated better
